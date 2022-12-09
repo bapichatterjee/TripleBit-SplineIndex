@@ -1,0 +1,3 @@
+[submodule "vendor/RadixSpline"]
+	path = vendor/RadixSpline
+	url = https://github.com/GauravDawra/RadixSpline.git
