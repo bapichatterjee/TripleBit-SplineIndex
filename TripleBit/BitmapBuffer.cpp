@@ -15,6 +15,7 @@
 #include "BitVectorWAH.h"
 #include "MMapBuffer.h"
 #include "TempFile.h"
+#include "SplineIndex.h"
 
 unsigned int ChunkManager::bufferCount = 0;
 
@@ -544,8 +545,8 @@ BitmapBuffer*  BitmapBuffer::load(MMapBuffer* bitmapImage, MMapBuffer*& bitmapIn
 		id = *((ID*)predicateReader); predicateReader = predicateReader + sizeof(ID);
 		predicateReader = predicateReader + sizeof(size_t);
 		ChunkManager* manager = ChunkManager::load(id, 0, bitmapImage->getBuffer(), offset);
-		manager->chunkIndex[0] = LineHashIndex::load(*manager, LineHashIndex::SUBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
-		manager->chunkIndex[1] = LineHashIndex::load(*manager, LineHashIndex::SUBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
+		manager->chunkIndex[0] = SplineIndex::load(*manager, SplineIndex::SUBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
+		manager->chunkIndex[1] = SplineIndex::load(*manager, SplineIndex::SUBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
 
 		buffer->predicate_managers[0][id] = manager;
 	}
@@ -556,8 +557,8 @@ BitmapBuffer*  BitmapBuffer::load(MMapBuffer* bitmapImage, MMapBuffer*& bitmapIn
 		predicateReader = predicateReader + sizeof(size_t);
 
 		ChunkManager* manager = ChunkManager::load(id, 1, bitmapImage->getBuffer(), offset);
-		manager->chunkIndex[0] = LineHashIndex::load(*manager, LineHashIndex::OBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
-		manager->chunkIndex[1] = LineHashIndex::load(*manager, LineHashIndex::OBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
+		manager->chunkIndex[0] = SplineIndex::load(*manager, SplineIndex::OBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
+		manager->chunkIndex[1] = SplineIndex::load(*manager, SplineIndex::OBJECT_INDEX, bitmapIndexImage->getBuffer(), indexOffset);
 
 		buffer->predicate_managers[1][id] = manager;
 	}
@@ -610,11 +611,11 @@ ChunkManager::ChunkManager(unsigned pid, unsigned _type, BitmapBuffer* _bitmapBu
 
 	//need to modify!
 	if( meta->type == 0) {
-		chunkIndex[0] = new LineHashIndex(*this, LineHashIndex::SUBJECT_INDEX);
-		chunkIndex[1] = new LineHashIndex(*this, LineHashIndex::SUBJECT_INDEX);
+		chunkIndex[0] = new SplineIndex(*this, SplineIndex::SUBJECT_INDEX);
+		chunkIndex[1] = new SplineIndex(*this, SplineIndex::SUBJECT_INDEX);
 	} else {
-		chunkIndex[0] = new LineHashIndex(*this, LineHashIndex::OBJECT_INDEX);
-		chunkIndex[1] = new LineHashIndex(*this, LineHashIndex::OBJECT_INDEX);
+		chunkIndex[0] = new SplineIndex(*this, SplineIndex::OBJECT_INDEX);
+		chunkIndex[1] = new SplineIndex(*this, SplineIndex::OBJECT_INDEX);
 	}
 
 	for (int i = 0; i < 2; i++)
@@ -1110,358 +1111,358 @@ const uchar* Chunk::skipBackward(const uchar* reader) {
 	return ++reader;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Redundant Chunk Index ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Status ChunkIndex::buildChunkIndex(unsigned chunkType) {
-	if(idTable == NULL) {
-		idTable = new MemoryBuffer(HASH_CAPACITY);
-		tableSize = idTable->getSize() / sizeof(unsigned);
-		offsetTable = new MemoryBuffer(HASH_CAPACITY);
-		idTableEntries = (ID*)idTable->getBuffer();
-		offsetTableEntries = (ID*)offsetTable->getBuffer();
-		tableSize = 0;
-	}
+// Status ChunkIndex::buildChunkIndex(unsigned chunkType) {
+// 	if(idTable == NULL) {
+// 		idTable = new MemoryBuffer(HASH_CAPACITY);
+// 		tableSize = idTable->getSize() / sizeof(unsigned);
+// 		offsetTable = new MemoryBuffer(HASH_CAPACITY);
+// 		idTableEntries = (ID*)idTable->getBuffer();
+// 		offsetTableEntries = (ID*)offsetTable->getBuffer();
+// 		tableSize = 0;
+// 	}
 
-	const uchar* begin, *limit, *reader;
-	ID x,y;
+// 	const uchar* begin, *limit, *reader;
+// 	ID x,y;
 
-	if(chunkType == 1) {
-		reader = chunkManager.getStartPtr(1);
-		begin = reader;
-		if(chunkManager.getStartPtr(chunkType) == chunkManager.getEndPtr(chunkType))
-			return OK;
+// 	if(chunkType == 1) {
+// 		reader = chunkManager.getStartPtr(1);
+// 		begin = reader;
+// 		if(chunkManager.getStartPtr(chunkType) == chunkManager.getEndPtr(chunkType))
+// 			return OK;
 
-		x = 0;
-		reader = Chunk::readXId(reader, x);
-		insertEntries(x, 0);
+// 		x = 0;
+// 		reader = Chunk::readXId(reader, x);
+// 		insertEntries(x, 0);
 
-		reader = reader + (int)MemoryBuffer::pagesize;
+// 		reader = reader + (int)MemoryBuffer::pagesize;
 
-		limit = chunkManager.getEndPtr(1);
-		while(reader < limit) {
-			x = 0;
-			//const char* temp = this->backSkip(reader);
-			const uchar* temp = Chunk::skipBackward(reader);
-			Chunk::readXId(temp, x);
-			insertEntries(x, temp - begin);
+// 		limit = chunkManager.getEndPtr(1);
+// 		while(reader < limit) {
+// 			x = 0;
+// 			//const char* temp = this->backSkip(reader);
+// 			const uchar* temp = Chunk::skipBackward(reader);
+// 			Chunk::readXId(temp, x);
+// 			insertEntries(x, temp - begin);
 
-			reader = reader + (int)MemoryBuffer::pagesize;
-		}
+// 			reader = reader + (int)MemoryBuffer::pagesize;
+// 		}
 
-		//reader = backSkip(limit);
-		reader = Chunk::skipBackward(limit);
-		x = 0;
-		Chunk::readXId(reader, x);
-		insertEntries(x, reader - begin);
-	}
+// 		//reader = backSkip(limit);
+// 		reader = Chunk::skipBackward(limit);
+// 		x = 0;
+// 		Chunk::readXId(reader, x);
+// 		insertEntries(x, reader - begin);
+// 	}
 
-	if(chunkType == 2) {
-		reader = chunkManager.getStartPtr(2);
-		begin = reader;
-		if(chunkManager.getStartPtr(chunkType) == chunkManager.getEndPtr(chunkType))
-			return OK;
+// 	if(chunkType == 2) {
+// 		reader = chunkManager.getStartPtr(2);
+// 		begin = reader;
+// 		if(chunkManager.getStartPtr(chunkType) == chunkManager.getEndPtr(chunkType))
+// 			return OK;
 
-		x = 0; y = 0;
-		Chunk::readYId(Chunk::readXId(reader, x), y);
-		insertEntries(x + y, 0);
+// 		x = 0; y = 0;
+// 		Chunk::readYId(Chunk::readXId(reader, x), y);
+// 		insertEntries(x + y, 0);
 
-		reader = reader + (int)MemoryBuffer::pagesize;
+// 		reader = reader + (int)MemoryBuffer::pagesize;
 
-		limit = chunkManager.getEndPtr(2);
-		while(reader < limit) {
-			x = 0; y = 0;
-			//const char* temp = this->backSkip(reader);
-			const uchar* temp = Chunk::skipBackward(reader);
-			Chunk::readYId(Chunk::readXId(temp, x), y);
-			insertEntries(x + y, temp - begin);
+// 		limit = chunkManager.getEndPtr(2);
+// 		while(reader < limit) {
+// 			x = 0; y = 0;
+// 			//const char* temp = this->backSkip(reader);
+// 			const uchar* temp = Chunk::skipBackward(reader);
+// 			Chunk::readYId(Chunk::readXId(temp, x), y);
+// 			insertEntries(x + y, temp - begin);
 
-			reader = reader + (int)MemoryBuffer::pagesize;
-		}
+// 			reader = reader + (int)MemoryBuffer::pagesize;
+// 		}
 
-		x= y = 0;
-		//reader = backSkip(limit);
-		reader = Chunk::skipBackward(limit);
-		Chunk::readYId(Chunk::readXId(reader, x), y);
-		insertEntries(x + y, reader - begin);
-	}
+// 		x= y = 0;
+// 		//reader = backSkip(limit);
+// 		reader = Chunk::skipBackward(limit);
+// 		Chunk::readYId(Chunk::readXId(reader, x), y);
+// 		insertEntries(x + y, reader - begin);
+// 	}
 
-	return OK;
-}
+// 	return OK;
+// }
 
-void ChunkIndex::insertEntries(ID id, unsigned offset)
-{
-	if(isBufferFull() == true) {
-		idTable->resize(HASH_CAPACITY);
-		idTableEntries = (ID*)idTable->get_address();
-		offsetTable->resize(HASH_CAPACITY);
-		offsetTableEntries = (ID*)offsetTable->get_address();
-	}
-	idTableEntries[tableSize] = id;
-	offsetTableEntries[tableSize] = offset;
+// void ChunkIndex::insertEntries(ID id, unsigned offset)
+// {
+// 	if(isBufferFull() == true) {
+// 		idTable->resize(HASH_CAPACITY);
+// 		idTableEntries = (ID*)idTable->get_address();
+// 		offsetTable->resize(HASH_CAPACITY);
+// 		offsetTableEntries = (ID*)offsetTable->get_address();
+// 	}
+// 	idTableEntries[tableSize] = id;
+// 	offsetTableEntries[tableSize] = offset;
 
-	tableSize++;
-}
+// 	tableSize++;
+// }
 
-const char* ChunkIndex::backSkip(const char* reader)
-{
-	if((*reinterpret_cast<const unsigned char*> (reader)) & 128 ) { //encounter y;
-		while ((*reinterpret_cast<const unsigned char*> (reader)) & 128)
-			--reader;
-		while (!((*reinterpret_cast<const unsigned char*> (reader)) & 128))
-			--reader;
-	} else { //encounter x;
-		while (!((*reinterpret_cast<const unsigned char*> (reader)) & 128))
-			--reader;
-	}
+// const char* ChunkIndex::backSkip(const char* reader)
+// {
+// 	if((*reinterpret_cast<const unsigned char*> (reader)) & 128 ) { //encounter y;
+// 		while ((*reinterpret_cast<const unsigned char*> (reader)) & 128)
+// 			--reader;
+// 		while (!((*reinterpret_cast<const unsigned char*> (reader)) & 128))
+// 			--reader;
+// 	} else { //encounter x;
+// 		while (!((*reinterpret_cast<const unsigned char*> (reader)) & 128))
+// 			--reader;
+// 	}
 
-	return ++reader;
-}
+// 	return ++reader;
+// }
 
-int ChunkIndex::searchChunk(ID id) {
-	int low, high, mid;
-	low = 0;
-	high = tableSize - 1;
+// int ChunkIndex::searchChunk(ID id) {
+// 	int low, high, mid;
+// 	low = 0;
+// 	high = tableSize - 1;
 
-	while (low <= high) {
-		mid = low + (high - low) / 2;
+// 	while (low <= high) {
+// 		mid = low + (high - low) / 2;
 
-		if (id <= idTableEntries[mid + 1] && id >= idTableEntries[mid]) {
-			if (mid == 0) {
-				return mid;
-			}
+// 		if (id <= idTableEntries[mid + 1] && id >= idTableEntries[mid]) {
+// 			if (mid == 0) {
+// 				return mid;
+// 			}
 
-			if (mid > 0 && id > idTableEntries[mid]) {
-				if (idTableEntries[mid + 1] == id)
-					return mid + 1;
-				else
-					return mid;
-			}
+// 			if (mid > 0 && id > idTableEntries[mid]) {
+// 				if (idTableEntries[mid + 1] == id)
+// 					return mid + 1;
+// 				else
+// 					return mid;
+// 			}
 
-			while (mid >= 0 && idTableEntries[mid] == id) {
-				if (mid > 0)
-					mid--;
-				else {
-					return mid;
-				}
-			}
-			//if (idTableEntries[mid + 1] == id) {
-			//	return mid + 1;
-			//} else {
-			//	return mid + 1;
-			//}
-			return mid + 1;
-		}
-		if (id < idTableEntries[mid])
-			high = mid - 1;
-		if (id > idTableEntries[mid + 1])
-			low = mid + 1;
-	}
+// 			while (mid >= 0 && idTableEntries[mid] == id) {
+// 				if (mid > 0)
+// 					mid--;
+// 				else {
+// 					return mid;
+// 				}
+// 			}
+// 			//if (idTableEntries[mid + 1] == id) {
+// 			//	return mid + 1;
+// 			//} else {
+// 			//	return mid + 1;
+// 			//}
+// 			return mid + 1;
+// 		}
+// 		if (id < idTableEntries[mid])
+// 			high = mid - 1;
+// 		if (id > idTableEntries[mid + 1])
+// 			low = mid + 1;
+// 	}
 
-	return -1;
+// 	return -1;
 
-}
+// }
 
-Status ChunkIndex::getOffsetById(ID id, unsigned int& offset, unsigned int typeID) {
-	int offsetId = this->searchChunk(id);
-	if(offsetId == -1) {
-		//cout<<"id: "<<id<<endl;
-		if(tableSize > 0 && id > idTableEntries[tableSize - 1]) {
-			return NOT_FOUND;
-		} else {
-			offset = 0;
-			return OK;
-		}
-	}
+// Status ChunkIndex::getOffsetById(ID id, unsigned int& offset, unsigned int typeID) {
+// 	int offsetId = this->searchChunk(id);
+// 	if(offsetId == -1) {
+// 		//cout<<"id: "<<id<<endl;
+// 		if(tableSize > 0 && id > idTableEntries[tableSize - 1]) {
+// 			return NOT_FOUND;
+// 		} else {
+// 			offset = 0;
+// 			return OK;
+// 		}
+// 	}
 
-	/*if(idTableEntries[offsetId] == id) {
-		offset = offsetTableEntries[offsetId];
-		return OK;
-	}*/
+// 	/*if(idTableEntries[offsetId] == id) {
+// 		offset = offsetTableEntries[offsetId];
+// 		return OK;
+// 	}*/
 
-	unsigned pBegin = offsetTableEntries[offsetId];
-	unsigned pEnd = offsetTableEntries[offsetId + 1];
+// 	unsigned pBegin = offsetTableEntries[offsetId];
+// 	unsigned pEnd = offsetTableEntries[offsetId + 1];
 
-	const uchar* beginPtr = NULL, *reader = NULL;
-	int low, high, mid = 0, lastmid = 0;
-	ID x, y;
+// 	const uchar* beginPtr = NULL, *reader = NULL;
+// 	int low, high, mid = 0, lastmid = 0;
+// 	ID x, y;
 
-	if (chunkManager.getTrpileCount(typeID) == 0)
-		return NOT_FOUND;
+// 	if (chunkManager.getTrpileCount(typeID) == 0)
+// 		return NOT_FOUND;
 
-	if (typeID == 1) {
-		low = pBegin;
-		high = pEnd;
+// 	if (typeID == 1) {
+// 		low = pBegin;
+// 		high = pEnd;
 
-		reader = chunkManager.getStartPtr(1) + low;
-		beginPtr = chunkManager.getStartPtr(1);
-		Chunk::readXId(reader, x);
+// 		reader = chunkManager.getStartPtr(1) + low;
+// 		beginPtr = chunkManager.getStartPtr(1);
+// 		Chunk::readXId(reader, x);
 
-		if (x == id) {
-			offset = low;
-			lastmid = low;
-			//cout<<__FUNCTION__<<"x==id"<<endl;
-			while (low > 0) {
-				//x = 0;
-				reader = Chunk::skipBackward(beginPtr + low);
-				Chunk::readXId(reader, x);
-				if (x < id) {
-					offset = lastmid;
-					return OK;
-				}
-				lastmid = reader - beginPtr;
-				low = lastmid - 1;
-			}
-			offset = lastmid;
-			return OK;
-		} else if (x > id)
-			return OK;
+// 		if (x == id) {
+// 			offset = low;
+// 			lastmid = low;
+// 			//cout<<__FUNCTION__<<"x==id"<<endl;
+// 			while (low > 0) {
+// 				//x = 0;
+// 				reader = Chunk::skipBackward(beginPtr + low);
+// 				Chunk::readXId(reader, x);
+// 				if (x < id) {
+// 					offset = lastmid;
+// 					return OK;
+// 				}
+// 				lastmid = reader - beginPtr;
+// 				low = lastmid - 1;
+// 			}
+// 			offset = lastmid;
+// 			return OK;
+// 		} else if (x > id)
+// 			return OK;
 
-		//cout<<__FUNCTION__<<"low<=high typeID == 1"<<endl;
-		while (low <= high) {
-			x = 0;
-			mid = low + (high - low) / 2;
-			if(lastmid == mid)
-				break;
-			lastmid = mid;
-			reader = Chunk::skipBackward(beginPtr + mid);
-			mid = reader - beginPtr;
-			Chunk::readXId(reader, x);
+// 		//cout<<__FUNCTION__<<"low<=high typeID == 1"<<endl;
+// 		while (low <= high) {
+// 			x = 0;
+// 			mid = low + (high - low) / 2;
+// 			if(lastmid == mid)
+// 				break;
+// 			lastmid = mid;
+// 			reader = Chunk::skipBackward(beginPtr + mid);
+// 			mid = reader - beginPtr;
+// 			Chunk::readXId(reader, x);
 
-			if (x == id) {
-				lastmid = mid;
-				while (mid > 0) {
-					//x = 0;
-					reader = Chunk::skipBackward(beginPtr + mid);
-					Chunk::readXId(reader, x);
-					if (x < id) {
-						offset = lastmid;
-						return OK;
-					}
-					lastmid = reader - beginPtr;
-					mid = lastmid - 1;
-				}
-				offset = lastmid;
-				return OK;
-			} else if (x > id) {
-				high = mid - 1;
-			} else {
-				low = mid + 1;
-			}
-		}
-	}
+// 			if (x == id) {
+// 				lastmid = mid;
+// 				while (mid > 0) {
+// 					//x = 0;
+// 					reader = Chunk::skipBackward(beginPtr + mid);
+// 					Chunk::readXId(reader, x);
+// 					if (x < id) {
+// 						offset = lastmid;
+// 						return OK;
+// 					}
+// 					lastmid = reader - beginPtr;
+// 					mid = lastmid - 1;
+// 				}
+// 				offset = lastmid;
+// 				return OK;
+// 			} else if (x > id) {
+// 				high = mid - 1;
+// 			} else {
+// 				low = mid + 1;
+// 			}
+// 		}
+// 	}
 
-	if (typeID == 2) {
-		low = pBegin;
-		high = pEnd;
+// 	if (typeID == 2) {
+// 		low = pBegin;
+// 		high = pEnd;
 
-		reader = chunkManager.getStartPtr(2) + low;
-		beginPtr = chunkManager.getStartPtr(2);
+// 		reader = chunkManager.getStartPtr(2) + low;
+// 		beginPtr = chunkManager.getStartPtr(2);
 
-		reader = Chunk::readXId(reader, x);
-		reader = Chunk::readYId(reader, y);
-		if (x + y == id) {
-			offset = low;
-			lastmid = low;
-			//cout<<__FUNCTION__<<"x + y == id typeID == 2"<<endl;
-			while (low > 0) {
-				//x = 0; y = 0;
-				reader = Chunk::skipBackward(beginPtr + low);
-				Chunk::readYId(Chunk::readXId(reader, x), y);
-				if (x + y < id) {
-					offset = lastmid;
-					return OK;
-				}
-				lastmid = reader - beginPtr;
-				low = lastmid - 1;
-			}
-			offset = lastmid;
-			return OK;
-		}
+// 		reader = Chunk::readXId(reader, x);
+// 		reader = Chunk::readYId(reader, y);
+// 		if (x + y == id) {
+// 			offset = low;
+// 			lastmid = low;
+// 			//cout<<__FUNCTION__<<"x + y == id typeID == 2"<<endl;
+// 			while (low > 0) {
+// 				//x = 0; y = 0;
+// 				reader = Chunk::skipBackward(beginPtr + low);
+// 				Chunk::readYId(Chunk::readXId(reader, x), y);
+// 				if (x + y < id) {
+// 					offset = lastmid;
+// 					return OK;
+// 				}
+// 				lastmid = reader - beginPtr;
+// 				low = lastmid - 1;
+// 			}
+// 			offset = lastmid;
+// 			return OK;
+// 		}
 
-		if (x + y > id)
-			return OK;
-		//cout<<__FUNCTION__<<"low<=high"<<endl;
-		while (low <= high) {
-			//x = 0;
-			mid = (low + high) / 2;
-			reader = Chunk::skipBackward(beginPtr + mid);
-			mid = reader - beginPtr;
-			if(lastmid == mid)
-				break;
-			lastmid = mid;
-			reader = Chunk::readXId(reader, x);
-			reader = Chunk::readYId(reader, y);
-			if (x + y == id) {
-				lastmid = mid;
-				while(mid > 0) {
-					//x = y = 0;
-					reader = Chunk::skipBackward(beginPtr + mid);
-					Chunk::readYId(Chunk::readXId(reader, x), y);
-					if(x + y < id) {
-						offset = lastmid;
-						return OK;
-					}
-					lastmid = reader - beginPtr;
-					mid = lastmid - 1;
-					//mid = reader - beginPtr;
-				}
-				offset = lastmid;
-				return OK;
-			} else if (x + y > id) {
-				high = mid - 1;
-			} else {
-				low = mid + 1;
-			}
-		}
-	}
-	if (mid <= 0)
-		offset = 0;
-	else
-		//if not found, offset is the first id which is bigger than the given id.
-		offset = Chunk::skipBackward(beginPtr + mid) - beginPtr;
+// 		if (x + y > id)
+// 			return OK;
+// 		//cout<<__FUNCTION__<<"low<=high"<<endl;
+// 		while (low <= high) {
+// 			//x = 0;
+// 			mid = (low + high) / 2;
+// 			reader = Chunk::skipBackward(beginPtr + mid);
+// 			mid = reader - beginPtr;
+// 			if(lastmid == mid)
+// 				break;
+// 			lastmid = mid;
+// 			reader = Chunk::readXId(reader, x);
+// 			reader = Chunk::readYId(reader, y);
+// 			if (x + y == id) {
+// 				lastmid = mid;
+// 				while(mid > 0) {
+// 					//x = y = 0;
+// 					reader = Chunk::skipBackward(beginPtr + mid);
+// 					Chunk::readYId(Chunk::readXId(reader, x), y);
+// 					if(x + y < id) {
+// 						offset = lastmid;
+// 						return OK;
+// 					}
+// 					lastmid = reader - beginPtr;
+// 					mid = lastmid - 1;
+// 					//mid = reader - beginPtr;
+// 				}
+// 				offset = lastmid;
+// 				return OK;
+// 			} else if (x + y > id) {
+// 				high = mid - 1;
+// 			} else {
+// 				low = mid + 1;
+// 			}
+// 		}
+// 	}
+// 	if (mid <= 0)
+// 		offset = 0;
+// 	else
+// 		//if not found, offset is the first id which is bigger than the given id.
+// 		offset = Chunk::skipBackward(beginPtr + mid) - beginPtr;
 
-	return OK;
-}
+// 	return OK;
+// }
 
-bool ChunkIndex::isBufferFull() {
-	return tableSize >= idTable->getSize() / 4;
-}
+// bool ChunkIndex::isBufferFull() {
+// 	return tableSize >= idTable->getSize() / 4;
+// }
 
-Status ChunkIndex::save(MMapBuffer*& indexBuffer)
-{
-	char* writeBuf;
+// Status ChunkIndex::save(MMapBuffer*& indexBuffer)
+// {
+// 	char* writeBuf;
 
-	if(indexBuffer == NULL) {
-		indexBuffer = MMapBuffer::create(string(string(DATABASE_PATH) + "/BitmapBuffer_index").c_str(), tableSize * 4 * 2 + 4);
-		writeBuf = indexBuffer->get_address();
-	} else {
-		size_t size = indexBuffer->getSize();
-		writeBuf = indexBuffer->resize(tableSize * 4 * 2 + 4) + size;
-	}
+// 	if(indexBuffer == NULL) {
+// 		indexBuffer = MMapBuffer::create(string(string(DATABASE_PATH) + "/BitmapBuffer_index").c_str(), tableSize * 4 * 2 + 4);
+// 		writeBuf = indexBuffer->get_address();
+// 	} else {
+// 		size_t size = indexBuffer->getSize();
+// 		writeBuf = indexBuffer->resize(tableSize * 4 * 2 + 4) + size;
+// 	}
 
-	*(ID*)writeBuf = tableSize;
-	writeBuf = writeBuf + 4;
-	memcpy(writeBuf, (char*)idTableEntries, tableSize * 4);
-	writeBuf = writeBuf + tableSize * 4;
-	memcpy(writeBuf, (char*)offsetTableEntries, tableSize * 4);
+// 	*(ID*)writeBuf = tableSize;
+// 	writeBuf = writeBuf + 4;
+// 	memcpy(writeBuf, (char*)idTableEntries, tableSize * 4);
+// 	writeBuf = writeBuf + tableSize * 4;
+// 	memcpy(writeBuf, (char*)offsetTableEntries, tableSize * 4);
 
-	indexBuffer->flush();
-	delete idTable;
-	idTable = NULL;
-	delete offsetTable;
-	offsetTable = NULL;
+// 	indexBuffer->flush();
+// 	delete idTable;
+// 	idTable = NULL;
+// 	delete offsetTable;
+// 	offsetTable = NULL;
 
-	return OK;
-}
+// 	return OK;
+// }
 
-ChunkIndex* ChunkIndex::load(ChunkManager& manager, IndexType indexType, char* buffer, size_t& offset)
-{
-	ChunkIndex* index = new ChunkIndex(manager, indexType);
-	char* base = buffer + offset;
-	index->tableSize = *((ID*)base);
-	index->idTableEntries = (ID*)(base + 4);
-	index->offsetTableEntries = (ID*)(index->idTableEntries + index->tableSize);
-	offset = offset + 4 + 4 * 2 * index->tableSize;
+// ChunkIndex* ChunkIndex::load(ChunkManager& manager, IndexType indexType, char* buffer, size_t& offset)
+// {
+// 	ChunkIndex* index = new ChunkIndex(manager, indexType);
+// 	char* base = buffer + offset;
+// 	index->tableSize = *((ID*)base);
+// 	index->idTableEntries = (ID*)(base + 4);
+// 	index->offsetTableEntries = (ID*)(index->idTableEntries + index->tableSize);
+// 	offset = offset + 4 + 4 * 2 * index->tableSize;
 
-	return index;
-}
+// 	return index;
+// }

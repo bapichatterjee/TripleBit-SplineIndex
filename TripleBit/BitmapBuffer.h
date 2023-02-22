@@ -22,44 +22,45 @@ class ChunkManager;
 #include "HashIndex.h"
 #include "LineHashIndex.h"
 #include "ThreadPool.h"
+#include "SplineIndex.h"
 
-class ChunkIndex {
-public:
-	enum IndexType { SUBJECT_INDEX, OBJECT_INDEX};
-private:
-	MemoryBuffer* idTable;
-	MemoryBuffer* offsetTable;
-	ID* idTableEntries;
-	ID* offsetTableEntries;
-	ChunkManager& chunkManager;
-	IndexType indexType;
-	unsigned int tableSize;
-public:
-	ChunkIndex(ChunkManager& _chunkManager, IndexType type) : chunkManager(_chunkManager), indexType(type) {
-		idTable = NULL;
-		offsetTable = NULL;
-		idTableEntries = NULL;
-		offsetTableEntries = NULL;
-	}
+// class ChunkIndex {
+// public:
+// 	enum IndexType { SUBJECT_INDEX, OBJECT_INDEX};
+// private:
+// 	MemoryBuffer* idTable;
+// 	MemoryBuffer* offsetTable;
+// 	ID* idTableEntries;
+// 	ID* offsetTableEntries;
+// 	ChunkManager& chunkManager;
+// 	IndexType indexType;
+// 	unsigned int tableSize;
+// public:
+// 	ChunkIndex(ChunkManager& _chunkManager, IndexType type) : chunkManager(_chunkManager), indexType(type) {
+// 		idTable = NULL;
+// 		offsetTable = NULL;
+// 		idTableEntries = NULL;
+// 		offsetTableEntries = NULL;
+// 	}
 
-	virtual ~ChunkIndex() {
-		idTable = NULL;
-		offsetTable = NULL;
-		idTableEntries = NULL;
-		offsetTableEntries = NULL;
-	}
+// 	virtual ~ChunkIndex() {
+// 		idTable = NULL;
+// 		offsetTable = NULL;
+// 		idTableEntries = NULL;
+// 		offsetTableEntries = NULL;
+// 	}
 
-	Status buildChunkIndex(unsigned chunkType);
-	int searchChunk(ID id);
-	Status getOffsetById(ID idtmp, unsigned int& offset, unsigned int typeID);
-	Status save(MMapBuffer*& indexBuffer);
-private:
-	bool isBufferFull();
-	const char* backSkip(const char* reader);
-	void insertEntries(ID id, unsigned offset);
-public:
-	static ChunkIndex* load(ChunkManager& manager, IndexType type, char* buffer, size_t& offset);
-};
+// 	Status buildChunkIndex(unsigned chunkType);
+// 	int searchChunk(ID id);
+// 	Status getOffsetById(ID idtmp, unsigned int& offset, unsigned int typeID);
+// 	Status save(MMapBuffer*& indexBuffer);
+// private:
+// 	bool isBufferFull();
+// 	const char* backSkip(const char* reader);
+// 	void insertEntries(ID id, unsigned offset);
+// public:
+// 	static ChunkIndex* load(ChunkManager& manager, IndexType type, char* buffer, size_t& offset);
+// };
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +133,8 @@ private:
 	///hash index; index the subject and object
 	//HashIndex* hashIndex[2];
 	//ChunkIndex* chunkIndex[2];
-	LineHashIndex* chunkIndex[2];
+	// LineHashIndex* chunkIndex[2];
+	SplineIndex* chunkIndex[2];
 
 	BitmapBuffer* bitmapBuffer;
 	vector<size_t> usedPage[2];
@@ -155,7 +157,7 @@ public:
 		return OK;
 	}
 
-	LineHashIndex* getChunkIndex(int type) {
+	SplineIndex* getChunkIndex(int type) {
 		if(type > 2 || type < 1) {
 			return NULL;
 		}

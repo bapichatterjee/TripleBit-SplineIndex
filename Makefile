@@ -79,7 +79,7 @@ define one-compile-rule
 endef
 
 
-modules      := TripleBit TripleBitQuery BuildTripleBitFromN3
+modules      := TripleBit TripleBitQuery BuildTripleBitFromN3 #SplineIndex
 programs     := 
 libraries    :=
 sources      :=
@@ -87,7 +87,7 @@ sources      :=
 objects      =  $(call source-to-object,$(sources))
 dependencies =  $(subst .o,.d,$(objects))
 
-include_dirs := TripleBit
+include_dirs := TripleBit vendor/RadixSpline SplineIndex
 CPPFLAGS += $(addprefix -I ,$(include_dirs))
 
 MKDIR := mkdir -p
