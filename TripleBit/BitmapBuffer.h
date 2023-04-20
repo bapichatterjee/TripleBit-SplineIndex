@@ -131,8 +131,8 @@ private:
 	static unsigned int bufferCount;
 
 	///hash index; index the subject and object
-	//HashIndex* hashIndex[2];
-	//ChunkIndex* chunkIndex[2];
+	// HashIndex* chunkIndex[2];
+	// ChunkIndex* chunkIndex[2];
 	// LineHashIndex* chunkIndex[2];
 	SplineIndex* chunkIndex[2];
 

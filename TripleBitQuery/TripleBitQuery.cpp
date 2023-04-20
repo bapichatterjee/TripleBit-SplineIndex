@@ -14,6 +14,9 @@
 #include "TripleBitRepository.h"
 #include "OSFile.h"
 #include "MMapBuffer.h"
+#include "include/rs/multi_map.h"
+#include "include/rs/serializer.h"
+#include "include/rs/radix_spline.h"
 
 char* DATABASE_PATH;
 char* QUERY_PATH;
@@ -23,7 +26,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Usage: %s <Database Directory> <Query files Directory>\n", argv[0]);
 		return -1;
 	}
-
+	// auto rs_ = rs::RadixSpline<unsigned>();
 	DATABASE_PATH = argv[1];
 
 	TripleBitRepository* repo = TripleBitRepository::create(DATABASE_PATH);

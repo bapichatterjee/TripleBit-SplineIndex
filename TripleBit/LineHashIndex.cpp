@@ -373,6 +373,7 @@ Status LineHashIndex::getOffsetByID(ID id, unsigned& offset, unsigned typeID)
 	}
 
 	unsigned pBegin = offsetTableEntries[offsetId];
+	// std::cout << "pBegin: "<<pBegin <<std::endl;
 	unsigned pEnd = offsetTableEntries[offsetId + 1];
 
 	const uchar* beginPtr = NULL, *reader = NULL;
@@ -412,7 +413,7 @@ Status LineHashIndex::getOffsetByID(ID id, unsigned& offset, unsigned typeID)
 
 		//cout<<__FUNCTION__<<"low<=high typeID == 1"<<endl;
 		while (low <= high) {
-			//x = 0;
+			x = 0;
 			mid = low + (high - low) / 2;
 			if (lastmid == mid)
 				break;
