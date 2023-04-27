@@ -130,6 +130,8 @@ static ID splitID[3] = {255, 65535, 16777215};
 
 Status LineHashIndex::buildIndex(unsigned chunkType)
 {
+	static int cnt = 0;
+	cnt++;
 	if (idTable == NULL) {
 		idTable = new MemoryBuffer(HASH_CAPACITY);
 		tableSize = idTable->getSize() / sizeof(unsigned);
@@ -154,7 +156,6 @@ Status LineHashIndex::buildIndex(unsigned chunkType)
 		x = 0;
 		reader = Chunk::readXId(reader, x);
 		insertEntries(x, 0);
-
 		reader = reader + (int) MemoryBuffer::pagesize;
 
 		limit = chunkManager.getEndPtr(1);
@@ -163,6 +164,7 @@ Status LineHashIndex::buildIndex(unsigned chunkType)
 			const uchar* temp = Chunk::skipBackward(reader);
 			Chunk::readXId(temp, x);
 			insertEntries(x, temp - begin);
+			std::cout << "ITER: "<<x<<' '<<temp-begin<<" "<<(void*)this<<' '<<cnt<<std::endl;
 
 			if(x > splitID[lineNo]) {
 				startEntry = endEntry; endEntry = tableSize;
@@ -177,7 +179,7 @@ Status LineHashIndex::buildIndex(unsigned chunkType)
 		x = 0;
 		Chunk::readXId(reader, x);
 		insertEntries(x, reader - begin);
-
+		std::cout << "ITER: "<<x<<' '<<reader-begin<<" "<<(void*)this<<' '<<cnt<<std::endl;
 		startEntry = endEntry; endEntry = tableSize;
 		if(buildLine(startEntry, endEntry, lineNo) == true) {
 			lineNo++;
@@ -361,6 +363,10 @@ int LineHashIndex::searchChunk(ID id)
 
 Status LineHashIndex::getOffsetByID(ID id, unsigned& offset, unsigned typeID)
 {
+	static int cnt = 0;
+	cnt++;
+
+	std::cout<<"getOffsetById search: "<<id<<' '<<(void*)this<<std::endl;
 	int offsetId = this->searchChunk(id);
 	if (offsetId == -1) {
 		//cout<<"id: "<<id<<endl;
@@ -372,6 +378,7 @@ Status LineHashIndex::getOffsetByID(ID id, unsigned& offset, unsigned typeID)
 		}
 	}
 
+	std::cout << "OFF id: "<<tableSize<<' ' << idTableEntries[0]<<' '<<idTableEntries[1]<<' '<<std::endl;
 	unsigned pBegin = offsetTableEntries[offsetId];
 	// std::cout << "pBegin: "<<pBegin <<std::endl;
 	unsigned pEnd = offsetTableEntries[offsetId + 1];
@@ -386,7 +393,7 @@ Status LineHashIndex::getOffsetByID(ID id, unsigned& offset, unsigned typeID)
 	if (typeID == 1) {
 		low = pBegin;
 		high = pEnd;
-
+		std::cout<<"low: "<<low<<" high: "<<high<<std::endl;
 		reader = chunkManager.getStartPtr(1) + low;
 		beginPtr = chunkManager.getStartPtr(1);
 		Chunk::readXId(reader, x);

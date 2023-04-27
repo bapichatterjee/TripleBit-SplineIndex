@@ -611,9 +611,13 @@ ChunkManager::ChunkManager(unsigned pid, unsigned _type, BitmapBuffer* _bitmapBu
 
 	//need to modify!
 	if( meta->type == 0) {
+		// chunkIndex[0] = new LineHashIndex(*this, SplineIndex::SUBJECT_INDEX);
+		// chunkIndex[1] = new LineHashIndex(*this, SplineIndex::SUBJECT_INDEX);
 		chunkIndex[0] = new SplineIndex(*this, SplineIndex::SUBJECT_INDEX);
 		chunkIndex[1] = new SplineIndex(*this, SplineIndex::SUBJECT_INDEX);
 	} else {
+		// chunkIndex[0] = new LineHashIndex(*this, SplineIndex::SUBJECT_INDEX);
+		// chunkIndex[1] = new LineHashIndex(*this, SplineIndex::SUBJECT_INDEX);
 		chunkIndex[0] = new SplineIndex(*this, SplineIndex::OBJECT_INDEX);
 		chunkIndex[1] = new SplineIndex(*this, SplineIndex::OBJECT_INDEX);
 	}
@@ -719,13 +723,15 @@ Status ChunkManager::buildChunkIndex()
 
 Status ChunkManager::getChunkPosByID(ID id, unsigned typeID, unsigned& offset)
 {
+	// cout << "In chunk pos id begin" << endl;
 	if(typeID == 1) {
 		return chunkIndex[0]->getOffsetByID(id, offset, typeID);
 	}else if(typeID  == 2) {
+		// cout << (void*)&chunkIndex << endl;
 		return chunkIndex[1]->getOffsetByID(id, offset, typeID);
 	}
-
-	cerr<<"unknown type id"<<endl;
+	// cout << "In chunk pos id end" << endl;
+	// cerr<<"unknown type id"<<endl;
 	return ERROR;
 }
 

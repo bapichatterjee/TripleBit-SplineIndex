@@ -3,10 +3,8 @@
 #include <sstream>
 #include <iostream>
 #include "radix_spline.h"
-
 #include "string.h"
 using namespace std;
-
 
 namespace rs {
 
@@ -57,6 +55,9 @@ class Serializer {
     size_t sz = 0;
     size_t size_to_serialise = sizeof(size_t) * 6 + sizeof(KeyType) * (2 + rs.spline_points_.size()) + sizeof(double) * rs.spline_points_.size() + sizeof(uint32_t) * rs.radix_table_.size();
 
+    // cout<<"Size to serialise (ToBytes): "<<size_to_serialise<<endl;
+    // cout<<"Address of bytes (ToBytes):"<<(void *)bytes<<endl; 
+
     buffer.write(reinterpret_cast<const char*>(&size_to_serialise),
                  sizeof(size_t)); sz += sizeof(size_t);
     buffer.write(reinterpret_cast<const char*>(&rs.min_key_), sizeof(KeyType)); sz += sizeof(KeyType);
@@ -91,6 +92,8 @@ class Serializer {
     memcpy(bytes, buffer.str().c_str(), sz);
     // comment this line if testing toBytes function individually for ease of testing
     bytes += sz;
+    // cout<<"Address of bytes after (ToBytes):"<<(void *)bytes<<endl; 
+
 
 
   }
@@ -135,13 +138,17 @@ class Serializer {
     RadixSpline<KeyType> rs;
     // rs = RadixSpline<KeyType>();
     memcpy(reinterpret_cast<char*>(&size_to_serialise), bytes, sizeof(size_t)); bytes += sizeof(size_t);
+    // cout<<"Address of bytes "<<&bytes<<endl; 
+    // cout<<"Size to serialise (FromBytes): "<<size_to_serialise<<endl;
+    // cout<<"Address of bytes (FromBytes):"<<(void *)bytes<<endl; 
+
 
     //TODO: check size
     char* buffer = (char*) malloc(size_to_serialise);
     
     memcpy(reinterpret_cast<char*>(buffer), bytes, size_to_serialise); 
     memcpy(reinterpret_cast<char*>(&rs.min_key_), bytes,  sizeof(KeyType)); bytes+=sizeof(KeyType);
-    cout << "ITTHE AA GYA" << endl;
+    // cout << "ITTHE AA GYA" << endl;
     memcpy(reinterpret_cast<char*>(&rs.max_key_), bytes,  sizeof(KeyType)); bytes+=sizeof(KeyType);
     memcpy(reinterpret_cast<char*>(&rs.num_keys_), bytes,  sizeof(size_t)); bytes+=sizeof(size_t);
     memcpy(reinterpret_cast<char*>(&rs.num_radix_bits_), bytes,  sizeof(size_t)); bytes+=sizeof(size_t);
@@ -151,7 +158,7 @@ class Serializer {
     // std::istringstream in(buffer);
   // Scalar members.
 
-cout<<"pls "<<endl;
+// cout<<"pls "<<endl;
     // Radix table.
     size_t radix_table_size;
     memcpy(reinterpret_cast<char*>(&radix_table_size), bytes,  sizeof(size_t)); bytes+=sizeof(size_t);
@@ -173,7 +180,9 @@ cout<<"pls "<<endl;
       memcpy(reinterpret_cast<char*>(&rs.spline_points_[i].y), bytes,  sizeof(double)); bytes+=sizeof(double);
     }
 
-cout<<"bhai yaar "<<(void*)&rs<<endl;
+// cout<<"bhai yaar "<<(void*)&rs<<endl;
+    // cout<<"Address of bytes after (FromBytes):"<<(void *)bytes<<endl;  
+
     return rs;
   }
 };

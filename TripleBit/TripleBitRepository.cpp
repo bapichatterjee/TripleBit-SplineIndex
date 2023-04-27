@@ -345,6 +345,9 @@ void TripleBitRepository::cmd_line(FILE* fin, FILE* fout)
 
 			if(queryStr.length() == 0)
 				continue;
+			// for(int i=0; i<5; i++){
+			// 	execute(queryStr);
+			// }
 			execute(queryStr);
 		}
 	}

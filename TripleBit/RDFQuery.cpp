@@ -82,7 +82,7 @@ Status RDFQuery::Execute(string& queryString, vector<string>& resultSet)
 	//bitmapQuery->releaseBuffer();
 	bitmapQuery->query(queryGraph, resultSet);
 	gettimeofday(&end,NULL);
-	cerr<<" time elapsed: "<<((end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec ) / 1000000.0<<" s"<<endl;
+	cerr<<" time elapsed : "<<((end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec ) / 1000000.0<<" s"<<endl;
 	//cout<<"time elapsed: "<<t.elapsed()<<endl;
 	queryGraph->Clear();
 	delete lexer;

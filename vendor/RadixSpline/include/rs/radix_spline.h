@@ -76,8 +76,10 @@ class RadixSpline {
     return sizeof(*this) + radix_table_.size() * sizeof(uint32_t) +
            spline_points_.size() * sizeof(Coord<KeyType>);
   }
-
- private:
+  size_t radix_table_size() const {
+    return radix_table_.size();
+  }
+//  private:
   // Returns the index of the spline point that marks the end of the spline
   // segment that contains the `key`: `key` ∈ (spline[index - 1], spline[index]]
   size_t GetSplineSegment(const KeyType key) const {
@@ -117,6 +119,7 @@ class RadixSpline {
   friend class Serializer;
   friend class SplineIndex;
   // friend class MultiMap;
+
 };
 
 }  // namespace rs

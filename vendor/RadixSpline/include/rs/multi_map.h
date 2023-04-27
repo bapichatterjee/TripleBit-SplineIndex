@@ -41,8 +41,15 @@ class MultiMap {
   std::size_t size(int cnt=0) const { return data_.size(); }
 
   std::size_t size_of_rs_() const { 
-      cout << "size_of_RS: "<<rs_.size_of_spline_points() << endl;
-    return sizeof(size_t) * 6 + sizeof(KeyType) * (2 + rs_.size_of_spline_points()) + sizeof(double) * rs_.size_of_spline_points() + sizeof(uint32_t) * rs_.size_of_radix_table(); 
+      // cout << "size_of_RS: "<<rs_.size_of_spline_points() << endl;
+    return sizeof(size_t) * 7 + sizeof(KeyType) * (2 + rs_.spline_points_.size()) + sizeof(double) * rs_.spline_points_.size() + sizeof(uint32_t) * rs_.radix_table_.size();
+  }
+  std::size_t size_of_data_() const {
+    return size() * sizeof(value_type) + sizeof(size_t);
+  }
+
+  std::size_t total_size() const {
+    return size_of_rs_() + size_of_data_();
   }
 
 
@@ -62,7 +69,7 @@ MultiMap<KeyType, ValueType>::MultiMap(BidirIt first, BidirIt last,
                                        size_t max_error) {
   // Empty spline.
   if (first == last) {
-    cout<<"empty spline"<<endl;
+    // cout<<"empty splines"<<endl;
     rs::Builder<KeyType> rsb(std::numeric_limits<KeyType>::min(),
                              std::numeric_limits<KeyType>::max(),
                              num_radix_bits, max_error);
@@ -97,7 +104,7 @@ MultiMap<KeyType, ValueType>::MultiMap(BidirIt first, BidirIt last,
     rsb.AddKey(iter.first);
   }
   rs_ = rsb.Finalize();
-  cout << "CONSTRUCTOR multimap "<<(void*)&rs_ << endl;
+  // cout << "CONSTRUCTOR multimap "<<(void*)&rs_ << endl;
 }
 
 template <class KeyType, class ValueType>
@@ -128,7 +135,7 @@ char* serializeVector(char *&buffer, std::vector<POD> const& v)
     // std::ostream os;
     char *original = buffer;
     // decltype(v.size()) size;
-    auto size = v.size();
+    size_t size = v.size();
     // size_t sz = 0;
     // os.write(reinterpret_cast<char const*>(&size), sizeof(size)); sz += sizeof(size);
     // os.write(reinterpret_cast<char const*>(v.data()), v.size() * sizeof(POD)); sz += v.size() * sizeof(POD);
@@ -143,7 +150,7 @@ char* serializeVector(char *&buffer, std::vector<POD> const& v)
 }
 
 template<typename POD>
-char* deserializeVector(char *&buffer, std::vector<POD>& v)
+char* deserializeVector(char *&buffer, std::vector<POD>& v, bool p=0)
 {
     // static_assert(std::is_trivial<POD>::value && std::is_standard_layout<POD>::value,
     //     "Can only deserialize POD types with this function");
@@ -153,7 +160,12 @@ char* deserializeVector(char *&buffer, std::vector<POD>& v)
     // is.read(reinterpret_cast<char*>(&size), sizeof(size));
     // v.resize(size);
     // is.read(reinterpret_cast<char*>(v.data()), v.size() * sizeof(POD));
-    memcpy(reinterpret_cast<char*>(&size), buffer, sizeof(size)); buffer += sizeof(size);
+    memcpy(reinterpret_cast<char*>(&size), buffer, sizeof(size)); 
+    
+    // if(p) {
+    //   std::cout << "HELLOOO" << std::endl;
+    // }
+    buffer += sizeof(size);
     // std::cout << size<<" YO"<<std::endl;
     v.resize(size);
     memcpy(reinterpret_cast<char*>(v.data()), buffer, v.size() * sizeof(POD)); buffer += v.size() * sizeof(POD);
@@ -163,24 +175,59 @@ char* deserializeVector(char *&buffer, std::vector<POD>& v)
 template <class KeyType, class ValueType>
 char* MultiMap<KeyType, ValueType>::serialize(char*& buffer) const
 {
+  // static char *prev = nullptr;
+  
   char* orig = buffer;
   Serializer<KeyType>::ToBytes(rs_, buffer);
   // std::cout<<"saving vector at: "<<(void*)buffer<<std::endl;
+  // std::cout << "CHECKING DATA before serialize at: "<<(void*)buffer << std::endl;
+  // for(auto p : data_) {
+  //   std::cout << p.first<<','<<p.second<<' ';
+  // } std::cout << std::endl;
+  
+  // char *sub2 = buffer;
+  // char *sub3 = sub2;
   serializeVector(buffer, data_);
-  return buffer;
+
+  // {
+  //   std::cout << "CHECKING DATA after serialize at: "<<(void*)sub2 << std::endl;
+  //   vector<std::pair<KeyType, ValueType> > sub;
+  //   deserializeVector(sub2, sub);
+  //   for(auto p : sub) {
+  //     std::cout << p.first<<','<<p.second<<' ';
+  //   } std::cout << std::endl;
+  // }
+
+  // if(prev != nullptr){
+  //   std::cout << "CHECKING DATA of previous serialize at: "<<(void*)prev << std::endl;
+  //   // vector<std::pair<KeyType, ValueType> > sub;
+  //   // deserializeVector(prev, sub, 1);
+  //   // for(auto p : sub) {
+  //   //   std::cout << p.first<<','<<p.second<<' ';
+  //   // } std::cout << std::endl;
+  // }
+  // prev = sub3;
+
+  return orig;
 }
 
 template <class KeyType, class ValueType>
 char* MultiMap<KeyType, ValueType>::deserialize(char*& buffer) {
   // std::cout << (void*)buffer<<std::endl;
   char *orig = buffer;
-  cout << (void*)&rs_ << endl;
+  // cout << (void*)&rs_ << endl;
   rs_ = RadixSpline<KeyType> ();
   // auto rs2 = RadixSpline<KeyType> ();
   // cout << "idhar tak2" << endl;
+  // std::cout << "MULTI: "<<(void*)buffer << std::endl;
   rs_ = Serializer<KeyType>::FromBytes(buffer);
+  // std::cout << "MULTI2: "<<(void*)buffer << std::endl;
   // // std::cout << (void*)buffer<<std::endl;
   deserializeVector(buffer, data_);
+  // std::cout << "CHECKING DATA after deserialize at: "<<(void*)buffer<<"\n";
+  // for(auto p : data_) {
+  //   std::cout << p.first<<','<<p.second<<' ';
+  // } std::cout << std::endl;
   return orig;
 }
 // auto hi = RadixSpline<unsigned>();
