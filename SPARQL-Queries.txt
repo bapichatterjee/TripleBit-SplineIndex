@@ -1,0 +1,115 @@
+DBLP Queries
+
+Query 1 (Q1)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dblp: <https://dblp.org/rdf/schema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?paperName ?author WHERE
+{
+?paperName dblp:authoredBy ?author .
+?paperName dblp:yearOfPublication "2018" .
+?author rdf:type dblp:Creator .
+?author dblp:affiliation "Stanford University, USA" .
+}
+Query 2 (Q2)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dblp: <https://dblp.org/rdf/schema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select ?y ?z where
+{
+?y dblp:authoredBy <https://dblp.org/pid/u/JeffreyDUllman> .
+?y rdfs:label ?z .
+?y dblp:yearOfPublication "2021" .
+?y dblp:yearOfEvent "2021" .
+}
+
+Query 3 (Q3)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dblp: <https://dblp.org/rdf/schema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select ?x where
+{
+?x dblp:publishedIn "ICADL" .
+?x dblp:numberOfCreators "2" .
+?x dblp:authoredBy ?y .
+?y dblp:affiliation "University of Melbourne, School of Computing and Information
+Systems, Australia" .
+}
+Query 4 (Q4)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dblp: <https://dblp.org/rdf/schema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?paper ?paperTitle WHERE
+{
+?paper rdfs:label ?paperTitle .
+?paper dblp:numberOfCreators "6" .
+?paper dblp:publishedIn "CIDR" .
+}
+Query 5(Q5)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dblp: <https://dblp.org/rdf/schema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select ?y where
+{
+?y rdf:type dblp:Publication .
+?y dblp:numberOfCreators "3" .
+?y dblp:yearOfPublication "2019" .
+?y dblp:yearOfEvent "2019" .
+}
+
+SP2BENCH Queries
+
+
+Query 1 (Q1)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX bench: <http://localhost/vocabulary/bench/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?yr
+WHERE {
+?journal rdf:type bench:Journal .
+?journal dc:title "Journal 1 (1940)" .
+?journal dcterms:issued ?yr .
+}
+Query 2 (Q2)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX bench: <http://localhost/vocabulary/bench/>
+PREFIX swrc: <http://swrc.ontoware.org/ontology#>
+SELECT ?article
+WHERE {
+?article rdf:type bench:Article .
+?article ?property ?value .
+}
+
+Query 3 (Q3)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX bench: <http://localhost/vocabulary/bench/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+SELECT DISTINCT ?person ?name WHERE
+{
+?article rdf:type bench:Article .
+?article dc:creator ?person .
+?inproc rdf:type bench:Inproceedings .
+
+?inproc dc:creator ?person .
+?person foaf:name ?name .
+}
+
+Query 4 (Q4)
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+SELECT DISTINCT ?name
+WHERE {
+?erdoes rdf:type foaf:Person .
+?erdoes foaf:name "Paul Erdoes" .
+}
+Query 5(Q5)
+PREFIX person: <http://localhost/persons/>
+SELECT ?subject ?predicate
+WHERE {
+?subject ?predicate person:Paul_Erdoes
+}
